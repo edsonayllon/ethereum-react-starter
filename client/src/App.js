@@ -1,80 +1,67 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
+import GlobalState from './context/GlobalState';
 import logo from './logo.svg';
 import Web3 from 'web3';
 import './App.css';
+import { StorageAbi } from './abi/ContractAbi';
 
 const web3 = new Web3(Web3.givenProvider);
 
-const abi = [
-  {
-    "constant": false,
-    "inputs": [
-      {
-        "name": "x",
-        "type": "uint256"
-      }
-    ],
-    "name": "set",
-    "outputs": [],
-    "payable": false,
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "get",
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "constant": true,
-    "inputs": [],
-    "name": "hello",
-    "outputs": [
-      {
-        "name": "",
-        "type": "string"
-      }
-    ],
-    "payable": false,
-    "stateMutability": "pure",
-    "type": "function"
-  }
-]
-
 function App() {
+  const [state, setState] = useState({});
+
+  useEffect(() => {
+    setState(state => ({...state, web3: new Web3(Web3.givenProvider)}))
+  }, [])
+
+  return (
+    <GlobalState.Provider value={[state, setState]}>
+      <ChildElement/>
+    </GlobalState.Provider>
+  );
+}
+
+
+function ChildElement() {
   const [number, setNumber] = useState(0);
   const [getNumber, setGetNumber] = useState('0x00');
+  const [state, setState] = useContext(GlobalState);
+
+  const handleLogin = async () => {
+    const accounts = await window.ethereum.enable();
+    const account = accounts[0];
+    await setState(state => ({ ...state, account }))
+  }
+
+  const handleContract = async () => {
+    const contractAddr = '0x1aAd4fc5772b5e89651A53875D2d99DECEA9538e';
+    const contract = new web3.eth.Contract(StorageAbi, contractAddr);
+    await setState(state => ({ ...state, contract }));
+  }
 
   const handleSet = async (e) => {
     e.preventDefault();
-    const contractAddr = '0xDB20352830a438c0802dd14F987a55Ea8899A690';
-    const SimpleContract = new web3.eth.Contract(abi, contractAddr);
-    const accounts = await window.ethereum.enable();
-    const account = accounts[0];
-    const gas = await SimpleContract.methods.set(number).estimateGas();
-    const result = await SimpleContract.methods.set(number).send({ from: account, gas }, (err, result) => {
+
+    const gas = await state.contract.methods.set(number).estimateGas();
+    const result = await state.contract.methods.set(number).send({
+      from: state.account, gas
+    }, (err, result) => {
       console.log(err);
       console.log(result);
     });
-  }
+  };
 
   const handleGet = async (e) => {
     e.preventDefault();
-    const contractAddr = '0xDB20352830a438c0802dd14F987a55Ea8899A690';
-    const SimpleContract = new web3.eth.Contract(abi, contractAddr);
-    const result = await SimpleContract.methods.get.call();
+    let contract = handleContract();
+    const result = await state.contract.methods.get.call();
     setGetNumber(result._hex);
     console.log(result);
   }
+
+  console.log(state);
+
+  // console.log(state);
 
   return (
     <div className="App">

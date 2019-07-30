@@ -1,0 +1,5 @@
+tasks:
+- command: npm i -g truffle
+- command: cd client
+- command: yarn
+
