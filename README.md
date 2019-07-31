@@ -4,6 +4,8 @@
 
 ## 1 | Description
 
+A React, Ethereum boilerplate with React Hooks, React Context and a Truffle.js Ethereum instance.
+
 ## 2 | Getting Started
 
 ### 2.1 Install
