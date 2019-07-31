@@ -12,6 +12,9 @@ function App() {
 
   useEffect(() => {
     setState(state => ({...state, web3: new Web3(Web3.givenProvider)}))
+    const contractAddr = '0xC21189215D44F445a24b316A1e0891F9A2251Fc6';
+    const contract = new web3.eth.Contract(StorageAbi, contractAddr);
+    setState(state => ({ ...state, contract }));
   }, [])
 
   return (
@@ -30,13 +33,7 @@ function ChildElement() {
   const handleLogin = async () => {
     const accounts = await window.ethereum.enable();
     const account = accounts[0];
-    await setState(state => ({ ...state, account }))
-  }
-
-  const handleContract = async () => {
-    const contractAddr = '0x1aAd4fc5772b5e89651A53875D2d99DECEA9538e';
-    const contract = new web3.eth.Contract(StorageAbi, contractAddr);
-    await setState(state => ({ ...state, contract }));
+    await setState(state => ({ ...state, account, loggedIn: true }))
   }
 
   const handleSet = async (e) => {
@@ -53,26 +50,27 @@ function ChildElement() {
 
   const handleGet = async (e) => {
     e.preventDefault();
-    let contract = handleContract();
     const result = await state.contract.methods.get.call();
-    setGetNumber(result._hex);
     console.log(result);
+    setGetNumber(result._hex);
   }
 
   console.log(state);
 
-  // console.log(state);
-
   return (
     <div className="App">
       <header className="App-header">
-        <form onSubmit={handleSet}>
-          <label>
-            Set Number:
-            <input type="text" name="name" value={number} onChange={e => setNumber(e.target.value) }  />
-          </label>
-          <input type="submit" value="Set Number" />
-        </form>
+        <button onClick={handleLogin}>Login with Metamask</button>
+        {
+          state.loggedIn &&
+          <form onSubmit={handleSet}>
+            <label>
+              Set Number:
+              <input type="text" name="name" value={number} onChange={e => setNumber(e.target.value) }  />
+            </label>
+            <input type="submit" value="Set Number" />
+          </form>
+        }
         <br/>
         <button onClick={handleGet} type="button">Get Number</button>
         { web3.utils.hexToNumber(getNumber) }
